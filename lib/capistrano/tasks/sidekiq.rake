@@ -11,11 +11,11 @@ namespace :load do
     set :sidekiq_options_per_process, nil
     set :sidekiq_user, nil
     # Rbenv, Chruby, and RVM integration
-    set :rbenv_map_bins, fetch(:rbenv_map_bins).to_a.concat(%w[sidekiq sidekiqctl])
-    set :rvm_map_bins, fetch(:rvm_map_bins).to_a.concat(%w[sidekiq sidekiqctl])
-    set :chruby_map_bins, fetch(:chruby_map_bins).to_a.concat(%w[sidekiq sidekiqctl])
+    set :rbenv_map_bins, fetch(:rbenv_map_bins).to_a.concat(%w[sidekiq])
+    set :rvm_map_bins, fetch(:rvm_map_bins).to_a.concat(%w[sidekiq])
+    set :chruby_map_bins, fetch(:chruby_map_bins).to_a.concat(%w[sidekiq])
     # Bundler integration
-    set :bundle_bins, fetch(:bundle_bins).to_a.concat(%w[sidekiq sidekiqctl])
+    set :bundle_bins, fetch(:bundle_bins).to_a.concat(%w[sidekiq])
     # Init system integration
     set :init_system, -> { nil }
     # systemd integration
@@ -225,15 +225,21 @@ namespace :sidekiq do
 
   def quiet_sidekiq(pid_file)
     begin
-      execute :sidekiqctl, 'quiet', pid_file.to_s
+      pid = pid_file.to_s
+      run "kill -TSTP #{pid}"
     rescue SSHKit::Command::Failed
       # If gems are not installed (first deploy) and sidekiq_default_hooks is active
-      warn 'sidekiqctl not found (ignore if this is the first deploy)'
+      warn 'could not send TSTP (quiet) signal to sidekiq process'
     end
   end
 
   def stop_sidekiq(pid_file)
-    execute :sidekiqctl, 'stop', pid_file.to_s, fetch(:sidekiq_timeout)
+    begin
+      pid = pid_file.to_s
+      run "kill -TERM #{pid}"
+    rescue SSHKit::Command::Failed
+      warn 'could not send TERM (shut down) signal to sidekiq process'
+    end
   end
 
   def start_sidekiq(pid_file, idx = 0)
