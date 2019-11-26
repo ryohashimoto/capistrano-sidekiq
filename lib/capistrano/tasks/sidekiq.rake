@@ -226,7 +226,7 @@ namespace :sidekiq do
   def quiet_sidekiq(pid_file)
     begin
       pid = pid_file.to_s
-      run "kill -TSTP #{pid}"
+      execute "kill -TSTP #{pid}"
     rescue SSHKit::Command::Failed
       # If gems are not installed (first deploy) and sidekiq_default_hooks is active
       warn 'could not send TSTP (quiet) signal to sidekiq process'
@@ -236,7 +236,7 @@ namespace :sidekiq do
   def stop_sidekiq(pid_file)
     begin
       pid = pid_file.to_s
-      run "kill -TERM #{pid}"
+      execute "kill -TERM #{pid}"
     rescue SSHKit::Command::Failed
       warn 'could not send TERM (shut down) signal to sidekiq process'
     end
